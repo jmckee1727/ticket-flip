@@ -3,7 +3,7 @@
 // when migrating to Postgres in production.
 
 import { PrismaClient } from "@/generated/prisma/client";
-import { PrismaBetterSQLite3 } from "@prisma/adapter-better-sqlite3";
+import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 
 const databaseUrl = process.env.DATABASE_URL ?? "file:./dev.db";
 
@@ -17,7 +17,7 @@ function resolveSqlitePath(url: string): string {
 
 const makeClient = () =>
   new PrismaClient({
-    adapter: new PrismaBetterSQLite3({ url: resolveSqlitePath(databaseUrl) }),
+    adapter: new PrismaBetterSqlite3({ url: resolveSqlitePath(databaseUrl) }),
   });
 
 // Cache on global in dev to survive Next.js hot-reload.
