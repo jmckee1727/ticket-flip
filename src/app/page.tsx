@@ -1,6 +1,10 @@
 import { prisma } from "@/lib/db";
 import { HomepageTable } from "./_components/HomepageTable";
 
+// Always render fresh from Postgres — the dashboard must reflect the latest
+// ingested events and projections, never a build-time snapshot.
+export const dynamic = "force-dynamic";
+
 async function getUpcomingEvents() {
   // Only include on-sales from the start of today onward. Anything earlier
   // already happened and belongs on the history page, not the homepage.
