@@ -1,23 +1,21 @@
 // Prisma client singleton. Safe to import from anywhere.
-// Uses the better-sqlite3 adapter for local dev. Swap to @prisma/adapter-pg
-// when migrating to Postgres in production.
+// Uses the pg adapter — works locally against Supabase Postgres and in
+// serverless runtime on Vercel.
 
 import { PrismaClient } from "@/generated/prisma/client";
-import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
+import { PrismaPg } from "@prisma/adapter-pg";
 
-const databaseUrl = process.env.DATABASE_URL ?? "file:./dev.db";
+const databaseUrl = process.env.DATABASE_URL;
 
-// Parse the SQLite URL. Accept forms like `file:./dev.db` or a raw path.
-function resolveSqlitePath(url: string): string {
-  if (url.startsWith("file:")) {
-    return url.replace(/^file:/, "");
-  }
-  return url;
+if (!databaseUrl) {
+  throw new Error(
+    "DATABASE_URL is not set. Add it to .env (local) or the Vercel project env."
+  );
 }
 
 const makeClient = () =>
   new PrismaClient({
-    adapter: new PrismaBetterSqlite3({ url: resolveSqlitePath(databaseUrl) }),
+    adapter: new PrismaPg({ connectionString: databaseUrl }),
   });
 
 // Cache on global in dev to survive Next.js hot-reload.

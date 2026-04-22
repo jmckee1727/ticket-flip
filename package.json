@@ -18,11 +18,11 @@
     "postinstall": "prisma generate"
   },
   "dependencies": {
-    "@prisma/adapter-better-sqlite3": "^7.7.0",
+    "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.7.0",
-    "better-sqlite3": "^12.9.0",
     "date-fns": "^4.1.0",
     "next": "16.2.4",
+    "pg": "^8.20.0",
     "prisma": "^7.7.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",

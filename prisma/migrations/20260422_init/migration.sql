@@ -1,18 +1,23 @@
+-- CreateSchema
+CREATE SCHEMA IF NOT EXISTS "public";
+
 -- CreateTable
 CREATE TABLE "Artist" (
-    "id" TEXT NOT NULL PRIMARY KEY,
+    "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "ticketmasterId" TEXT,
     "spotifyId" TEXT,
     "genres" TEXT,
     "monthlyListeners" INTEGER,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" DATETIME NOT NULL
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Artist_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
 CREATE TABLE "Venue" (
-    "id" TEXT NOT NULL PRIMARY KEY,
+    "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "city" TEXT NOT NULL,
     "state" TEXT,
@@ -20,88 +25,95 @@ CREATE TABLE "Venue" (
     "postalCode" TEXT,
     "capacity" INTEGER,
     "ticketmasterId" TEXT,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" DATETIME NOT NULL
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Venue_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
 CREATE TABLE "Event" (
-    "id" TEXT NOT NULL PRIMARY KEY,
+    "id" TEXT NOT NULL,
     "ticketmasterId" TEXT,
     "name" TEXT NOT NULL,
     "category" TEXT NOT NULL,
-    "eventDate" DATETIME NOT NULL,
-    "onsaleStart" DATETIME,
-    "onsaleEnd" DATETIME,
-    "presaleStart" DATETIME,
-    "presaleEnd" DATETIME,
-    "faceMinUsd" REAL,
-    "faceMaxUsd" REAL,
+    "eventDate" TIMESTAMP(3) NOT NULL,
+    "onsaleStart" TIMESTAMP(3),
+    "onsaleEnd" TIMESTAMP(3),
+    "presaleStart" TIMESTAMP(3),
+    "presaleEnd" TIMESTAMP(3),
+    "faceMinUsd" DOUBLE PRECISION,
+    "faceMaxUsd" DOUBLE PRECISION,
     "isSafeTix" BOOLEAN NOT NULL DEFAULT false,
     "isNonTransferable" BOOLEAN NOT NULL DEFAULT false,
     "resalePlatformRestriction" TEXT,
-    "resalePriceCap" REAL,
+    "resalePriceCap" DOUBLE PRECISION,
     "primaryUrl" TEXT,
     "hiddenFromHomepage" BOOLEAN NOT NULL DEFAULT false,
     "hiddenReason" TEXT,
     "artistId" TEXT,
     "venueId" TEXT NOT NULL,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" DATETIME NOT NULL,
-    CONSTRAINT "Event_artistId_fkey" FOREIGN KEY ("artistId") REFERENCES "Artist" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
-    CONSTRAINT "Event_venueId_fkey" FOREIGN KEY ("venueId") REFERENCES "Venue" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Event_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
 CREATE TABLE "EventIngestSource" (
-    "id" TEXT NOT NULL PRIMARY KEY,
+    "id" TEXT NOT NULL,
     "eventId" TEXT NOT NULL,
     "source" TEXT NOT NULL,
     "externalId" TEXT NOT NULL,
     "raw" TEXT,
-    "fetchedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT "EventIngestSource_eventId_fkey" FOREIGN KEY ("eventId") REFERENCES "Event" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+    "fetchedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "EventIngestSource_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
 CREATE TABLE "ResaleSnapshot" (
-    "id" TEXT NOT NULL PRIMARY KEY,
+    "id" TEXT NOT NULL,
     "eventId" TEXT NOT NULL,
     "source" TEXT NOT NULL,
-    "capturedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "priceMinUsd" REAL,
-    "priceMedianUsd" REAL,
-    "priceMaxUsd" REAL,
-    "priceAvgUsd" REAL,
+    "capturedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "priceMinUsd" DOUBLE PRECISION,
+    "priceMedianUsd" DOUBLE PRECISION,
+    "priceMaxUsd" DOUBLE PRECISION,
+    "priceAvgUsd" DOUBLE PRECISION,
     "listingCount" INTEGER,
     "daysUntilEvent" INTEGER,
     "sectionsJson" TEXT,
-    CONSTRAINT "ResaleSnapshot_eventId_fkey" FOREIGN KEY ("eventId") REFERENCES "Event" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+
+    CONSTRAINT "ResaleSnapshot_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
 CREATE TABLE "Projection" (
-    "id" TEXT NOT NULL PRIMARY KEY,
+    "id" TEXT NOT NULL,
     "eventId" TEXT NOT NULL,
     "algorithmName" TEXT NOT NULL,
     "algorithmVersion" TEXT NOT NULL DEFAULT '0.1.0',
-    "computedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "projectedPriceUsd" REAL NOT NULL,
-    "projectedProfitUsd" REAL,
-    "confidence" REAL,
+    "computedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "projectedPriceUsd" DOUBLE PRECISION NOT NULL,
+    "projectedProfitUsd" DOUBLE PRECISION,
+    "confidence" DOUBLE PRECISION,
     "reasoningJson" TEXT,
-    CONSTRAINT "Projection_eventId_fkey" FOREIGN KEY ("eventId") REFERENCES "Event" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+
+    CONSTRAINT "Projection_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
 CREATE TABLE "IngestionRun" (
-    "id" TEXT NOT NULL PRIMARY KEY,
+    "id" TEXT NOT NULL,
     "source" TEXT NOT NULL,
-    "startedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "finishedAt" DATETIME,
+    "startedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "finishedAt" TIMESTAMP(3),
     "okCount" INTEGER NOT NULL DEFAULT 0,
     "errCount" INTEGER NOT NULL DEFAULT 0,
-    "notes" TEXT
+    "notes" TEXT,
+
+    CONSTRAINT "IngestionRun_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
@@ -154,3 +166,19 @@ CREATE INDEX "Projection_eventId_computedAt_idx" ON "Projection"("eventId", "com
 
 -- CreateIndex
 CREATE INDEX "IngestionRun_source_startedAt_idx" ON "IngestionRun"("source", "startedAt");
+
+-- AddForeignKey
+ALTER TABLE "Event" ADD CONSTRAINT "Event_artistId_fkey" FOREIGN KEY ("artistId") REFERENCES "Artist"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Event" ADD CONSTRAINT "Event_venueId_fkey" FOREIGN KEY ("venueId") REFERENCES "Venue"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "EventIngestSource" ADD CONSTRAINT "EventIngestSource_eventId_fkey" FOREIGN KEY ("eventId") REFERENCES "Event"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "ResaleSnapshot" ADD CONSTRAINT "ResaleSnapshot_eventId_fkey" FOREIGN KEY ("eventId") REFERENCES "Event"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Projection" ADD CONSTRAINT "Projection_eventId_fkey" FOREIGN KEY ("eventId") REFERENCES "Event"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+

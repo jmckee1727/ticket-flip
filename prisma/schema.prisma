@@ -1,5 +1,5 @@
 // Ticket Flip Calendar - Prisma schema
-// SQLite for local dev; Postgres-compatible so switching is a connection-string change.
+// Postgres in production (Supabase); adapter in src/lib/db.ts abstracts the connection.
 
 generator client {
   provider = "prisma-client"
@@ -7,7 +7,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
 }
 
 // --- Reference entities ------------------------------------------------------
