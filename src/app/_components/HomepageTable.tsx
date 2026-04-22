@@ -26,7 +26,11 @@ export function HomepageTable({ events }: HomepageTableProps) {
   const [category, setCategory] = useState<"all" | "CONCERT" | "FESTIVAL">(
     "all"
   );
-  const [hideNonFlippable, setHideNonFlippable] = useState(true);
+  // Default OFF: Ticketmaster flags ~97% of events as SafeTix, and SafeTix
+  // alone doesn't make a ticket non-flippable (Ticketmaster's own resale
+  // marketplace works with SafeTix). Users can opt in to hide them if they
+  // only want tickets with proven third-party resale paths.
+  const [hideNonFlippable, setHideNonFlippable] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
   // Compute date boundary
