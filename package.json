@@ -1,0 +1,44 @@
+{
+  "name": "ticket-flip",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "db:migrate": "prisma migrate dev",
+    "db:generate": "prisma generate",
+    "db:studio": "prisma studio",
+    "ingest:ticketmaster": "tsx scripts/ingest-ticketmaster.ts",
+    "ingest:tickpick": "tsx scripts/ingest-tickpick.ts",
+    "snapshot": "tsx scripts/snapshot-resale.ts",
+    "projections:run": "tsx scripts/run-projections.ts",
+    "seed:fixtures": "tsx scripts/seed-fixtures.ts",
+    "postinstall": "prisma generate"
+  },
+  "dependencies": {
+    "@prisma/adapter-better-sqlite3": "^7.7.0",
+    "@prisma/client": "^7.7.0",
+    "better-sqlite3": "^12.9.0",
+    "date-fns": "^4.1.0",
+    "next": "16.2.4",
+    "prisma": "^7.7.0",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "recharts": "^3.8.1",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20.19.39",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "dotenv": "^17.4.2",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.4",
+    "tailwindcss": "^4",
+    "tsx": "^4.21.0",
+    "typescript": "^5"
+  }
+}

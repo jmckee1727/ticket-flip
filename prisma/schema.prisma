@@ -1,0 +1,147 @@
+// Ticket Flip Calendar - Prisma schema
+// SQLite for local dev; Postgres-compatible so switching is a connection-string change.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// --- Reference entities ------------------------------------------------------
+
+model Artist {
+  id               String   @id @default(cuid())
+  name             String   @unique
+  ticketmasterId   String?  @unique
+  spotifyId        String?
+  genres           String?  // comma-separated for simplicity under SQLite
+  monthlyListeners Int?
+
+  events           Event[]
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([name])
+}
+
+model Venue {
+  id             String   @id @default(cuid())
+  name           String
+  city           String
+  state          String?
+  country        String   @default("US")
+  postalCode     String?
+  capacity       Int?
+  ticketmasterId String?  @unique
+
+  events         Event[]
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([name, city, state], name: "name_city_state")
+  @@index([city, state])
+}
+
+// --- Events ------------------------------------------------------------------
+
+model Event {
+  id             String    @id @default(cuid())
+  ticketmasterId String?   @unique
+  name           String
+  category       String    // 'CONCERT' | 'FESTIVAL'
+  eventDate      DateTime
+  onsaleStart    DateTime?
+  onsaleEnd      DateTime?
+  presaleStart   DateTime?
+  presaleEnd     DateTime?
+  faceMinUsd     Float?
+  faceMaxUsd     Float?
+
+  // Resellability flags (the product's moat)
+  isSafeTix                 Boolean @default(false)
+  isNonTransferable         Boolean @default(false)
+  resalePlatformRestriction String?
+  resalePriceCap            Float?
+
+  primaryUrl         String?
+  hiddenFromHomepage Boolean @default(false)
+  hiddenReason       String?
+
+  artistId String?
+  artist   Artist? @relation(fields: [artistId], references: [id])
+  venueId  String
+  venue    Venue   @relation(fields: [venueId], references: [id])
+
+  snapshots     ResaleSnapshot[]
+  projections   Projection[]
+  ingestSources EventIngestSource[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([onsaleStart])
+  @@index([eventDate])
+  @@index([artistId])
+  @@index([venueId])
+}
+
+model EventIngestSource {
+  id         String   @id @default(cuid())
+  eventId    String
+  event      Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  source     String
+  externalId String
+  raw        String?
+  fetchedAt  DateTime @default(now())
+
+  @@unique([source, externalId])
+  @@index([eventId])
+}
+
+model ResaleSnapshot {
+  id             String   @id @default(cuid())
+  eventId        String
+  event          Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  source         String
+  capturedAt     DateTime @default(now())
+  priceMinUsd    Float?
+  priceMedianUsd Float?
+  priceMaxUsd    Float?
+  priceAvgUsd    Float?
+  listingCount   Int?
+  daysUntilEvent Int?
+  sectionsJson   String?
+
+  @@index([eventId, capturedAt])
+  @@index([source, capturedAt])
+}
+
+model Projection {
+  id                 String   @id @default(cuid())
+  eventId            String
+  event              Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  algorithmName      String
+  algorithmVersion   String   @default("0.1.0")
+  computedAt         DateTime @default(now())
+  projectedPriceUsd  Float
+  projectedProfitUsd Float?
+  confidence         Float?
+  reasoningJson      String?
+
+  @@index([eventId, computedAt])
+}
+
+model IngestionRun {
+  id         String    @id @default(cuid())
+  source     String
+  startedAt  DateTime  @default(now())
+  finishedAt DateTime?
+  okCount    Int       @default(0)
+  errCount   Int       @default(0)
+  notes      String?
+
+  @@index([source, startedAt])
+}
