@@ -41,13 +41,15 @@ export function HomepageTable({ events }: HomepageTableProps) {
   // Filter and search
   const filtered = useMemo(() => {
     return events.filter((event) => {
-      // Date range filter
-      if (dayLimit !== Infinity) {
-        const daysUntil =
-          (event.onsaleStart!.getTime() - now.getTime()) /
-          (1000 * 60 * 60 * 24);
-        if (daysUntil > dayLimit) return false;
-      }
+      // Always hide on-sales that already happened — the homepage is for
+      // upcoming drops. Past on-sales live on the history page.
+      const daysUntil =
+        (event.onsaleStart!.getTime() - now.getTime()) /
+        (1000 * 60 * 60 * 24);
+      if (daysUntil < 0) return false;
+
+      // Date range filter (upper bound)
+      if (dayLimit !== Infinity && daysUntil > dayLimit) return false;
 
       // Category filter
       if (category !== "all" && event.category !== category) {
