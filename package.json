@@ -12,6 +12,7 @@
     "db:studio": "prisma studio",
     "ingest:ticketmaster": "tsx scripts/ingest-ticketmaster.ts",
     "ingest:tickpick": "tsx scripts/ingest-tickpick.ts",
+    "refresh:faces": "tsx scripts/refresh-face-values.ts",
     "snapshot": "tsx scripts/snapshot-resale.ts",
     "projections:run": "tsx scripts/run-projections.ts",
     "seed:fixtures": "tsx scripts/seed-fixtures.ts",

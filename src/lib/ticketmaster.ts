@@ -555,3 +555,81 @@ export async function fetchUSConcerts(
 
   return events;
 }
+
+// ============================================================================
+// Single-Event Fetch (for post-onsale refresh)
+// ============================================================================
+
+// Ticketmaster's Discovery API populates `priceRanges` only after onsale
+// opens. Events ingested before their onsale will have null face values; to
+// backfill them we re-fetch by ID once onsale has started.
+export async function fetchEventById(
+  ticketmasterId: string
+): Promise<TicketmasterEvent | null> {
+  if (!apiKey) {
+    throw new Error("TICKETMASTER_API_KEY is not set");
+  }
+
+  const url = `https://app.ticketmaster.com/discovery/v2/events/${encodeURIComponent(
+    ticketmasterId
+  )}.json?apikey=${apiKey}`;
+
+  let attempt = 0;
+  const maxAttempts = 3;
+
+  while (attempt < maxAttempts) {
+    try {
+      const response = await fetch(url, {
+        headers: {
+          Accept: "application/json",
+          "User-Agent": "ticket-flip-calendar/0.1 (discovery-api-client)",
+        },
+      });
+
+      if (response.status === 404) {
+        // Event has been delisted or the ID is wrong. Nothing to refresh.
+        return null;
+      }
+
+      if (response.status === 429) {
+        // Rate limited; back off and retry.
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+        attempt++;
+        continue;
+      }
+
+      if (response.status >= 500) {
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+        attempt++;
+        continue;
+      }
+
+      if (!response.ok) {
+        console.error(
+          `fetchEventById: ${response.status} ${response.statusText} for ${ticketmasterId}`
+        );
+        return null;
+      }
+
+      const data = await response.json();
+      const parsed = EventSchema.safeParse(data);
+      if (!parsed.success) {
+        console.error(
+          `fetchEventById: schema mismatch for ${ticketmasterId}: ${parsed.error.message}`
+        );
+        return null;
+      }
+
+      return extractEventData(parsed.data);
+    } catch (err) {
+      console.error(
+        `fetchEventById: network error for ${ticketmasterId} (attempt ${attempt + 1}):`,
+        err
+      );
+      attempt++;
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
+  }
+
+  return null;
+}

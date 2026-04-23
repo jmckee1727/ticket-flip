@@ -16,14 +16,19 @@ interface RunOptions {
   eventId?: string;
   upcomingOnly: boolean;
   dryRun: boolean;
+  limit?: number;
+  faceOnly: boolean;
 }
 
 function parseArgs(): RunOptions {
   const args = process.argv.slice(2);
   const opts: RunOptions = {
-    algorithmName: "placeholder_1_3x",
+    // comparables_v1 is the real algorithm; placeholder_1_3x stays registered
+    // for baseline comparisons but is no longer the default.
+    algorithmName: "comparables_v1",
     upcomingOnly: true,
     dryRun: false,
+    faceOnly: false,
   };
 
   for (let i = 0; i < args.length; i++) {
@@ -35,6 +40,12 @@ function parseArgs(): RunOptions {
       opts.upcomingOnly = true;
     } else if (args[i] === "--dry-run") {
       opts.dryRun = true;
+    } else if (args[i] === "--limit" && i + 1 < args.length) {
+      opts.limit = parseInt(args[++i], 10);
+    } else if (args[i] === "--face-only") {
+      // Only project events that have a face value — anything else will just
+      // fall through to the prior-only branch and isn't useful to run.
+      opts.faceOnly = true;
     }
   }
 
@@ -78,14 +89,18 @@ async function main() {
           { onsaleStart: { gte: now } },
           { eventDate: { gte: now } },
         ],
+        ...(opts.faceOnly ? { faceMaxUsd: { not: null } } : {}),
       },
       include: { artist: true, venue: true },
       orderBy: { eventDate: "asc" },
+      ...(opts.limit ? { take: opts.limit } : {}),
     });
   } else {
     targetEvents = await prisma.event.findMany({
+      where: opts.faceOnly ? { faceMaxUsd: { not: null } } : undefined,
       include: { artist: true, venue: true },
       orderBy: { eventDate: "asc" },
+      ...(opts.limit ? { take: opts.limit } : {}),
     });
   }
 
