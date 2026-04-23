@@ -15,6 +15,7 @@ import { z } from "zod";
 
 interface CliOptions {
   days: number;
+  pastDays?: number;
   dryRun: boolean;
   useFixture: boolean;
   limit?: number;
@@ -33,6 +34,12 @@ function parseArgs(): CliOptions {
 
     if (arg === "--days" && args[i + 1]) {
       options.days = parseInt(args[i + 1], 10);
+      i++;
+    } else if (arg === "--past-days" && args[i + 1]) {
+      // Pull PAST events: startDate = today - N, endDate = today.
+      // Used for building the historical corpus that the comparables-based
+      // projection algorithm trains against.
+      options.pastDays = parseInt(args[i + 1], 10);
       i++;
     } else if (arg === "--dry-run") {
       options.dryRun = true;
@@ -407,8 +414,9 @@ async function main() {
 
   console.log("🎫 Ticketmaster Discovery API Ingestion");
   console.log("========================================");
+  const mode = options.pastDays ? `past ${options.pastDays} days` : `next ${options.days} days`;
   console.log(
-    `Options: days=${options.days}, dryRun=${options.dryRun}, useFixture=${options.useFixture}${
+    `Options: mode=${mode}, dryRun=${options.dryRun}, useFixture=${options.useFixture}${
       options.limit ? `, limit=${options.limit}` : ""
     }`
   );
@@ -428,6 +436,18 @@ async function main() {
     if (options.useFixture) {
       console.log("Loading events from fixture...");
       events = loadFixture(options.limit);
+    } else if (options.pastDays) {
+      console.log(
+        `Fetching past ${options.pastDays} days of events from Ticketmaster Discovery API...`
+      );
+      const startDate = new Date(
+        Date.now() - options.pastDays * 24 * 60 * 60 * 1000
+      );
+      events = await fetchUSConcerts({
+        startDate,
+        endDate: new Date(),
+        limit: options.limit,
+      });
     } else {
       console.log(
         `Fetching events for next ${options.days} days from Ticketmaster Discovery API...`

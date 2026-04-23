@@ -16,6 +16,7 @@ interface CliOptions {
   limit: number;
   dryRun: boolean;
   since: number;
+  mode: "future" | "past" | "all";
 }
 
 function parseArgs(): CliOptions {
@@ -24,6 +25,7 @@ function parseArgs(): CliOptions {
     limit: 20,
     dryRun: false,
     since: 180,
+    mode: "future",
   };
 
   for (let i = 0; i < args.length; i++) {
@@ -40,6 +42,12 @@ function parseArgs(): CliOptions {
     } else if (arg === "--since" && args[i + 1]) {
       options.since = parseInt(args[i + 1], 10);
       i++;
+    } else if (arg === "--past") {
+      // Scrape TickPick for artists whose events are in the past N days.
+      // Used for backfilling the historical corpus to calibrate projections.
+      options.mode = "past";
+    } else if (arg === "--all") {
+      options.mode = "all";
     }
   }
 
@@ -77,30 +85,35 @@ async function main() {
   let skipCount = 0;
 
   try {
-    // Get distinct artists with events in the future
-    const futureDate = new Date();
-    const sinceDateMs = futureDate.getTime() + options.since * 24 * 60 * 60 * 1000;
-    const sinceDate = new Date(sinceDateMs);
+    // Build the event date window depending on mode.
+    const now = new Date();
+    const sinceMs = options.since * 24 * 60 * 60 * 1000;
+    let eventDateFilter: { gte?: Date; lte?: Date };
+    if (options.mode === "past") {
+      eventDateFilter = {
+        gte: new Date(now.getTime() - sinceMs),
+        lte: now,
+      };
+    } else if (options.mode === "all") {
+      eventDateFilter = {
+        gte: new Date(now.getTime() - sinceMs),
+        lte: new Date(now.getTime() + sinceMs),
+      };
+    } else {
+      // "future" — original behavior
+      eventDateFilter = {
+        gte: now,
+        lte: new Date(now.getTime() + sinceMs),
+      };
+    }
 
     let artists = await prisma.artist.findMany({
       where: {
-        events: {
-          some: {
-            eventDate: {
-              gte: futureDate,
-              lte: sinceDate,
-            },
-          },
-        },
+        events: { some: { eventDate: eventDateFilter } },
       },
       include: {
         events: {
-          where: {
-            eventDate: {
-              gte: futureDate,
-              lte: sinceDate,
-            },
-          },
+          where: { eventDate: eventDateFilter },
           orderBy: { eventDate: "asc" },
         },
       },
