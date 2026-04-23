@@ -60,10 +60,14 @@ export function HomepageTable({ events }: HomepageTableProps) {
         return false;
       }
 
-      // Non-flippable filter
+      // Non-flippable filter. SafeTix alone does not count — most SafeTix
+      // events are resellable (TM marketplace, digital transfers). Only treat
+      // events as non-flippable when they have a hard restriction.
       if (
         hideNonFlippable &&
-        (event.isSafeTix || event.isNonTransferable)
+        (event.isNonTransferable ||
+          event.resalePlatformRestriction !== null ||
+          event.resalePriceCap !== null)
       ) {
         return false;
       }

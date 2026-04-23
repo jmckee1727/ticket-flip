@@ -9,9 +9,13 @@ export function ResellabilityBadges({ event }: ResellabilityBadgesProps) {
 
   if (event.isSafeTix) {
     badges.push({
+      // Informational only — SafeTix does not block resale by itself.
+      // Ticketmaster's own resale marketplace accepts SafeTix, and most
+      // third-party platforms now handle digital transfers.
       label: "SafeTix",
-      color: "bg-yellow-100 text-yellow-800",
-      tooltip: "Fan Protect (SafeTix) - verified tickets only",
+      color: "bg-blue-50 text-blue-700 border border-blue-200",
+      tooltip:
+        "SafeTix (mobile-only, rotating barcode). Resellable on Ticketmaster's marketplace; some third-party platforms too.",
     });
   }
 
